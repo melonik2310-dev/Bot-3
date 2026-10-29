@@ -1,0 +1,46 @@
+from aiogram import Bot, Dispatcher, F
+from aiogram.filters import CommandStart
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.enums import ChatMemberStatus
+
+BOT_TOKEN = "9148677120:AAHR7a1g 2rbZqDp08LLZLIUT5gw N cDG8akQ"
+CHANNELS = ["@so2_over", "@eblanitypiego"]
+KEY_BOT = "@ZeninTrialBot"
+
+bot = Bot(BOT_TOKEN)
+dp = Dispatcher()
+
+def get_start_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="so2_over", url="https://t.me/so2_over")],
+        [InlineKeyboardButton(text="eblanitypiego", url="https://t.me/eblanitypiego")],
+        [InlineKeyboardButton(text="✅ Проверить подписку", callback_data="check_sub")]
+    ])
+
+@dp.message(CommandStart())
+async def start(message: Message):
+    text = (
+        "✨ **Добро пожаловать!** ✨\n\n"
+        "Это бот, в котором ты можешь получить **ключ доступа**.\n\n"
+        "🔐 Чтобы получить ключ, подпишись на каналы ниже и нажми «Проверить подписку»."
+    )
+    await message.answer(text, reply_markup=get_start_keyboard(), parse_mode="Markdown")
+
+@dp.callback_query(F.data == "check_sub")
+async def check_sub(call: CallbackQuery):
+    user_id = call.from_user.id
+    not_subscribed = []
+    
+    for ch in CHANNELS:
+        try:
+            member = await bot.get_chat_member(chat_id=ch, user_id=user_id)
+            if member.status not in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR]:
+                not_subscribed.append(ch)
+        except Exception:
+            not_subscribed.append(ch)
+    
+    if not not_subscribed:
+        await call.message.answer(f"Ключ здесь ➡️ {KEY_BOT}")
+        await call.answer()
+    else:
+        await call.answer("Сначала подпишись на все каналы!", show_alert=True)
